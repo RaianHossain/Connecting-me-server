@@ -1,0 +1,32 @@
+{
+  "posts": [
+    {
+      "id": "06c3518e-6f27-4fd1-8c5d-bd56b4c92519",
+      "content": "Hello world. Passing quality time with two of my sister's pet bird. ",
+      "image": "uploads/posts/image-1729970846324-88502156.jpeg",
+      "postType": "image",
+      "author": {
+        "id": "484df4be-4659-4337-ab45-b06095ca6e33",
+        "name": "DeepNoob Raian",
+        "avatar": "uploads/avatar/avatar-1729970616474-279386738.jpg"
+      },
+      "comments": [],
+      "likes": [
+        "484df4be-4659-4337-ab45-b06095ca6e33"
+      ],
+      "createAt": "2024-10-26T19:27:26.342Z"
+    }
+  ],
+  "comments": [],
+  "users": [
+    {
+      "id": "484df4be-4659-4337-ab45-b06095ca6e33",
+      "password": "$2b$08$Ymrmyi367DczgpvSVEagDOZcqDmW3F./9JchaF3Pi4C6c9layhVbC",
+      "firstName": "DeepNoob",
+      "lastName": "Raian",
+      "avatar": "uploads/avatar/avatar-1729970616474-279386738.jpg",
+      "email": "raiansanil@gmail.com",
+      "bio": "This is my new Id. I am enjoying the app"
+    }
+  ]
+}
