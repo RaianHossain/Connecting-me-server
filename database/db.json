@@ -27,6 +27,14 @@
       "avatar": "uploads/avatar/avatar-1729970616474-279386738.jpg",
       "email": "raiansanil@gmail.com",
       "bio": "This is my new Id. I am enjoying the app"
+    },
+    {
+      "id": "1b169fa6-2c53-402e-9460-10d3c727624c",
+      "password": "$2b$08$ieUUSqXeJfWLEeAf1qSF.OWobheYC5f5dyfNOfh/kpz8N1iPEUGb2",
+      "firstName": "Agonto",
+      "lastName": "Azad",
+      "avatar": null,
+      "email": "agontoazadkammo@gmail.com"
     }
   ]
 }

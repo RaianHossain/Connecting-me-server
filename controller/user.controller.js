@@ -44,7 +44,7 @@ const refreshToken = async (req, res) => {
 const getUsers = async (req, res) => {
   const { db } = req.app;
 
-  const result = await db.get("users").find({}).value();
+  const result = await db.get("users").value();
 
   res.status(200).json(result);
 }
