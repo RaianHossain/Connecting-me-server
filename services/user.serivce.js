@@ -9,7 +9,8 @@ const login = async (email, password, db) => {
   if (!user) {
     throw new Error("User not found");
   }
-
+  console.log("input password", password);
+  console.log("hashed password", user.password);
   const isPasswordCorrect = await bcrypt.compareSync(password, user.password);
 
   if (!isPasswordCorrect) {
