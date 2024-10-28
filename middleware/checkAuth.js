@@ -7,7 +7,8 @@ const checkAuth = (req, res, next) => {
   if (
     req.path === "/auth/refresh-token" ||
     req.path === "/auth/login" ||
-    req.path === "/auth/register"
+    req.path === "/auth/register" ||
+    req.path === "/auth/users"
   ) {
     return next();
   }

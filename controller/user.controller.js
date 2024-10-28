@@ -41,4 +41,12 @@ const refreshToken = async (req, res) => {
   res.status(200).json(result);
 };
 
-module.exports.UserController = { login, register, refreshToken };
+const getUsers = async (req, res) => {
+  const { db } = req.app;
+
+  const result = await db.get("users").find({}).value();
+
+  res.status(200).json(result);
+}
+
+module.exports.UserController = { login, register, refreshToken, getUsers };
