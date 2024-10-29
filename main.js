@@ -35,7 +35,7 @@ app.use((err, req, res, _next) => {
   });
 });
 
-const start = async (port = process.env.PORT || 3000) => {
+const start = async (port = 3000) => {
   try {
       await connectDb(process.env.MONGO_STRING);
       app.listen(port, () => {
