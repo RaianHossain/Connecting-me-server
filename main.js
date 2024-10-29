@@ -7,7 +7,9 @@ const { connectDb } = require("./database/connect");
 
 const app = express();
 const router = express.Router();
-app.use(cors({ credentials: true, origin: true }));
+// app.use(cors({ credentials: true, origin: true }));
+app.use(cors({ credentials: true, origin: "https://connect-me-iota.vercel.app" }));
+
 app.use(express.static(__dirname + "/public"));
 app.use("/uploads", express.static("uploads"));
 
