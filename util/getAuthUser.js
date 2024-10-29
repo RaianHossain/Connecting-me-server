@@ -1,11 +1,19 @@
-module.exports = (req) => {
+const People = require('../models/people.model'); // Make sure to adjust the path as needed
+
+module.exports = async (req) => {
   try {
-    const { db } = req.app;
-    console.log(req?.claims?.email);
-    const { id, email, firstName, lastName, avatar } = db.get("users").find({ email: req?.claims?.email }).value();
+    const { reqEmail } = req.claims; 
+
+    const user = await People.findOne({ reqEmail }).exec(); 
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const { _id, email, firstName, lastName, avatar } = user;
 
     return {
-      id,
+      _id, 
       email,
       firstName,
       lastName,
@@ -13,6 +21,6 @@ module.exports = (req) => {
       name: `${firstName} ${lastName}`,
     };
   } catch (e) {
-    throw new Error("User not found");
+    throw new Error(e.message);
   }
 };

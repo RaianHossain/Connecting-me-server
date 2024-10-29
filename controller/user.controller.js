@@ -1,4 +1,4 @@
-const { UserService } = require("../services/user.serivce");
+const { UserService } = require("../services/user.service");
 
 const login = async (req, res) => {
   if (!req?.body?.email || !req?.body?.password) {
@@ -6,25 +6,28 @@ const login = async (req, res) => {
   }
 
   const { email, password } = req.body;
-  const { db } = req.app;
 
-  const result = await UserService.login(email, password, db);
-
-  res.status(200).json(result);
+  try {
+    const result = await UserService.login(email, password);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(401).json({ message: error.message });
+  }
 };
 
-const register = (req, res) => {
+const register = async (req, res) => {
   if (!req?.body?.email || !req?.body?.password || !req?.body?.firstName || !req?.body?.lastName) {
     return res.status(400).json({
-      message: "Please provide email, password, firstName and lastName",
+      message: "Please provide email, password, firstName, and lastName",
     });
   }
 
-  const { db } = req.app;
-
-  const result = UserService.register(req.body, db);
-
-  res.status(201).json(result);
+  try {
+    const result = await UserService.register(req.body);
+    res.status(201).json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
 };
 
 const refreshToken = async (req, res) => {
@@ -34,19 +37,21 @@ const refreshToken = async (req, res) => {
     return res.status(400).json({ message: "Please provide refreshToken" });
   }
 
-  const { db } = req.app;
-
-  const result = await UserService.refreshToken(refreshToken, db);
-
-  res.status(200).json(result);
+  try {
+    const result = await UserService.refreshToken(refreshToken);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(401).json({ message: error.message });
+  }
 };
 
 const getUsers = async (req, res) => {
-  const { db } = req.app;
-
-  const result = await db.get("users").value();
-
-  res.status(200).json(result);
-}
+  try {
+    const result = await UserService.getUsers();
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 module.exports.UserController = { login, register, refreshToken, getUsers };

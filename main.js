@@ -1,19 +1,17 @@
-const jsonServer = require("json-server");
 const customRouter = require("./router");
 const express = require("express");
 const checkAuth = require("./middleware/checkAuth");
 require("dotenv").config();
 const cors = require("cors");
+const { connectDb } = require("./database/connect");
 
-const app = jsonServer.create();
-const router = jsonServer.router("./database/db.json");
-
+const app = express();
+const router = express.Router();
 app.use(cors({ credentials: true, origin: true }));
 app.use(express.static(__dirname + "/public"));
 app.use("/uploads", express.static("uploads"));
 
 // /!\ Bind the router db to the app
-app.db = router.db;
 
 app.use(express.json());
 
@@ -33,9 +31,16 @@ app.use((err, req, res, _next) => {
   });
 });
 
-app.listen(3000, () => {
-  console.log("Listening on port 3000");
-  console.log("http://localhost:3000");
-});
+const start = async (port = process.env.PORT || 3000) => {
+  try {
+      app.mongoose = await connectDb(process.env.MONGO_STRING);
+      app.listen(port, () => {
+          console.log(`App listening to ${port}`);
+      })
+      console.log("Success");
+  } catch (error) {
+      console.log(error);
+  }
+}
 
-module.exports = app;
+start();

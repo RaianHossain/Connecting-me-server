@@ -1,135 +1,143 @@
 const { PostService } = require("../services/post.service");
 const getAuthUser = require("../util/getAuthUser");
-const crypto = require("crypto");
+const Post = require("../models/post.model");
 
-const getPosts = (req, res) => {
-  const { db } = req.app;
-  const posts = db.get("posts").value();
+// Get all posts with populated data
+const getPosts = async (req, res) => {
+  try {
+    const posts = await Post.find({})
+      .populate("author")
+      .populate({ path: "comments", model: "Comment", populate: { path: "author", model: "People" } })
+      .populate("likes", "firstName lastName avatar");
 
-  if (posts == null || posts == undefined || posts.length == 0) {
-    return res.status(404).send({ message: "No posts found" });
+    if (!posts.length) {
+      return res.status(404).send({ message: "No posts found" });
+    }
+
+    return res.status(200).send(posts);
+  } catch (error) {
+    return res.status(500).send({ message: error.message });
   }
-
-  return res.status(200).send(posts);
 };
 
-const createNewPost = (req, res) => {
-  const { db } = req.app;
-  const postSchema = {
-    id: crypto.randomUUID(),
-    content: "",
-    image: null,
-    postType: "text",
-    author: {},
-    comments: [],
-    likes: [],
-    createAt: new Date(),
-  };
+// Create a new post
+const createNewPost = async (req, res) => {
+  const user = await getAuthUser(req);
 
-  const user = getAuthUser(req);
-  const { id, name, avatar } = user;
-  console.log(req?.body);
-  const post = {
-    postType: req?.file?.filename ? "image" : "text",
-    content: req?.body?.content || req?.body?.formData?.content || "",
-    image: req?.file?.filename ? `uploads/posts/${req?.file?.filename}` : null,
-    author: { id, name, avatar },
-  };
+  const post = new Post({
+    content: req.body.content || req.body.formData?.content || "",
+    image: req.file?.filename ? `uploads/posts/${req.file.filename}` : null,
+    postType: req.file?.filename ? "image" : "text",
+    author: user._id,
+  });
 
-  const data = Object.assign({}, postSchema, post);
+  try {
+    await post.save();
+    const savedPost = await PostService.getFullPostById(post._id);
 
-  db.get("posts").push(data).write();
-
-  res.json(data);
+    return res.status(201).send(savedPost);
+  } catch (error) {
+    return res.status(500).send({ message: error.message });
+  }
 };
 
-const deletePost = (req, res) => {
-  const { db } = req.app;
+// Delete a post by ID
+const deletePost = async (req, res) => {
   const { postId } = req.params;
 
-  const post = db.get("posts").find({ id: postId }).value();
+  try {
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).send({ message: "No post found" });
+    }
 
-  if (post == null || post == undefined || !post) {
-    return res.status(404).send({ message: "No posts found" });
+    await Post.findByIdAndDelete(postId);
+    return res.status(200).send({ message: "Post deleted successfully" });
+  } catch (error) {
+    return res.status(500).send({ message: error.message });
   }
-
-  db.get("posts").remove({ id: postId }).write();
-
-  return res.status(200).send({ message: "Post deleted successfully" });
 };
 
-const updatePost = (req, res) => {
-  const { db } = req.app;
+// Update a post by ID
+const updatePost = async (req, res) => {
   const { postId } = req.params;
 
-  const post = db.get("posts").find({ id: postId }).value();
-  console.log(post);
-  if (post == null || post == undefined || !post) {
-    return res.status(404).send({ message: "No posts found" });
+  try {
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).send({ message: "No post found" });
+    }
+
+    post.content = req.body.content || post.content;
+    post.image = req.file?.filename ? `uploads/posts/${req.file.filename}` : post.image;
+    post.postType = req.file?.filename ? "image" : "text";
+
+    await post.save();
+    const updatedPost = await PostService.getFullPostById(postId);
+
+    return res.status(200).send(updatedPost);
+  } catch (error) {
+    return res.status(500).send({ message: error.message });
   }
-
-  const updatedContent = {
-    // eslint-disable-next-line node/no-unsupported-features/es-syntax
-    ...req.body,
-    image: req?.file?.filename ? `uploads/posts/${req?.file?.filename}` : post.image,
-  };
-  const updatedPost = db
-    .get("posts")
-    // eslint-disable-next-line node/no-unsupported-features/es-syntax
-    .updateById(postId, updatedContent)
-    .write();
-
-  return res.status(200).send(updatedPost);
 };
 
-const getSinglePost = (req, res) => {
-  const { db } = req.app;
+// Get a single post by ID with populated data
+const getSinglePost = async (req, res) => {
   const { postId } = req.params;
 
-  const posts = db.get("posts").find({ id: postId }).value();
+  try {
+    const post = await PostService.getFullPostById(postId);
+    if (!post) {
+      return res.status(404).send({ message: "No post found" });
+    }
 
-  if (posts == null || posts == undefined || !posts) {
-    return res.status(404).send({ message: "No posts found" });
+    return res.status(200).send(post);
+  } catch (error) {
+    return res.status(500).send({ message: error.message });
   }
-
-  return res.status(200).send(posts);
 };
 
-const likeAPost = (req, res) => {
+// Like or unlike a post
+const likeAPost = async (req, res) => {
   const { postId } = req.params;
-  const { db } = req.app;
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
 
-  const response = PostService.likePost(postId, user, db);
-
-  return res.status(200).send(response);
+  try {
+    const response = await PostService.likePost(postId, user);
+    return res.status(200).send(response);
+  } catch (error) {
+    return res.status(500).send({ message: error.message });
+  }
 };
 
-const commentPost = (req, res) => {
-  if (
-    !req.body?.comment ||
-    req.body?.comment == null ||
-    req.body?.comment == ""
-  ) {
+// Comment on a post
+const commentPost = async (req, res) => {
+  if (!req.body.comment) {
     return res.status(400).send({ message: "Comment cannot be empty" });
   }
 
   const { postId } = req.params;
-  const { db } = req.app;
-  const user = getAuthUser(req);
+  const user = await getAuthUser(req);
 
-  const response = PostService.comment(postId, db, user, req.body?.comment);
-  return res.status(200).send(response);
+  try {
+    const response = await PostService.comment(postId, user, req.body.comment);
+    return res.status(200).send(response);
+  } catch (error) {
+    return res.status(500).send({ message: error.message });
+  }
 };
 
-const deleteComment = (req, res) => {
+// Delete a comment from a post
+const deleteComment = async (req, res) => {
   const { postId, commentId } = req.params;
-  const user = getAuthUser(req);
-  const { db } = req.app;
+  const user = await getAuthUser(req);
 
-  const response = PostService.deleteComment(postId, commentId, db, user);
-
-  return res.status(200).send(response);
+  try {
+    const response = await PostService.deleteComment(postId, commentId, user);
+    return res.status(200).send(response);
+  } catch (error) {
+    return res.status(500).send({ message: error.message });
+  }
 };
 
 module.exports.PostController = {

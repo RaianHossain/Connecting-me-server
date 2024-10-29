@@ -1,87 +1,88 @@
-const crypto = require("crypto");
+const Post = require('../models/post.model'); 
+const Comment = require('../models/comment.model'); 
 
-const getPostById = (postId, db) => {
-  return db.get("posts").find({ id: postId }).value();
+// Helper function to fully populate a post by ID
+const getFullPostById = async (postId) => {
+  return await Post.findById(postId)
+    .populate("author")
+    .populate({ path: "comments", model: "Comment", populate: { path: "author", model: "People" } })
+    .populate("likes", "firstName lastName avatar"); // populate like authors as well if needed
 };
 
-const likePost = (postId, user, db) => {
-  // We will get the user details from the token
-  const { id } = user;
+// Like or Unlike a post
+const likePost = async (postId, user) => {
+  const { _id: userId } = user;
 
-  // Get the post from the database
-  const post = getPostById(postId, db);
+  const post = await Post.findById(postId);
+  if (!post) throw new Error("Post not found");
 
-  // Check if the user has already liked the post
-  const isLiked = post.likes.includes(id);
+  const likeIds = post.likes.map(like => like.toString());
 
-  // If the user has already liked the post then we will unlike it
+  const isLiked = likeIds.includes(userId.toString());
+
   if (isLiked) {
-    // Remove the user id from the likes array
-    const likes = post.likes.filter((like) => like !== id);
-    db.get("posts").updateById(postId, { likes }).write();
-    return { message: "Post Unliked", likeCount: likes.length };
+    post.likes = post.likes.filter((likeId) => likeId.toString() !== userId.toString());
   } else {
-    // Add the user id to the likes array
-    const likes = [...post.likes, id];
-    db.get("posts").updateById(postId, { likes }).write();
-    return { message: "Post Liked", likeCount: likes.length };
+    post.likes.push(userId);
   }
+
+  await post.save();
+
+  const updatedPost = await getFullPostById(postId);
+
+  return {
+    message: isLiked ? "Post Unliked" : "Post Liked",
+    likeCount: updatedPost.likes.length,
+  };
 };
 
-const comment = (postId, db, user, comment) => {
-  // We will get the user details from the token
-  const { id, name, avatar } = user;
 
-  // Get the post from the database
-  const post = getPostById(postId, db);
-  console.log(postId);
+// Add a comment to a post
+const comment = async (postId, user, commentText) => {
+  const { _id: userId } = user;
+  const post = await getFullPostById(postId);
+  if (!post) throw new Error("Post not found");
 
-  if (!post) {
-    throw new Error("Post not found");
-  }
+  const newComment = new Comment({ comment: commentText, author: userId });
+  await newComment.save();
 
-  // Add the comment to the comments array
-  const comments = [
-    ...post.comments,
-    { id: crypto.randomUUID(), comment, createdAt: new Date(), author: { id, name, avatar } },
-  ];
+  post.comments.push(newComment._id);
+  await post.save();
 
-  // Update the post with the new comments
-  db.get("posts").updateById(postId, { comments }).write();
+  const updatedPost = await getFullPostById(postId);
 
-  // Send the response
-  return { message: "Comment Added", commentCount: comments.length, comments };
+  return {
+    message: "Comment Added",
+    commentCount: updatedPost.comments.length,
+    comments: updatedPost.comments,
+  };
 };
 
-const deleteComment = (postId, commentId, db, user) => {
-  
-  // Get the post from the database
-  const post = getPostById(postId, db);
+// Delete a comment from a post
+const deleteComment = async (postId, commentId, user) => {
+  const { _id: userId } = user;
+  const post = await getFullPostById(postId);
+  if (!post) throw new Error("Post not found");
 
-  // get the user info
-  const { id } = user;
-  const postedComments = post.comments;
-  console.log(postedComments.find(cmt => cmt.id === commentId));
-  // Check if the comment exists in comments array
-  if (!postedComments.find(cmt => cmt.id === commentId)) {
-    throw new Error("Comment not found");
-  }
+  const comment = await Comment.findById(commentId);
+  if (!comment) throw new Error("Comment not found");
 
-  let comments;
-  // Only Post Author or Comment Author Able to delete the comment
-  if (post.author.id == id || postedComments.find((comment) => comment.author.id === id)) {
-    // Remove the comment from the comments array
-    comments = postedComments.filter((comment) => comment.id !== commentId);
-
-    // Update the post with the new comments
-    db.get("posts").updateById(postId, { comments }).write();
-  } else {
+  // Check if the user is allowed to delete the comment
+  if (comment.author.toString() !== userId.toString() && post.author.toString() !== userId.toString()) {
     throw new Error("You are not allowed to delete this comment");
-  } 
+  }
 
+  post.comments = post.comments.filter((cmt) => cmt.toString() !== commentId);
+  await post.save();
+  await Comment.findByIdAndDelete(commentId);
 
-  // Send the response
-  return { message: "Comment Deleted", commentCount: comments.length, comments };
+  const updatedPost = await getFullPostById(postId);
+
+  return {
+    message: "Comment Deleted",
+    commentCount: updatedPost.comments.length,
+    post: updatedPost,
+  };
 };
 
-module.exports.PostService = { likePost, comment, deleteComment };
+module.exports.PostService = { likePost, comment, deleteComment, getFullPostById };
