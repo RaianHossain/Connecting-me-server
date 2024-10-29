@@ -72,7 +72,7 @@ const deleteComment = async (postId, commentId, user) => {
     throw new Error("You are not allowed to delete this comment");
   }
 
-  post.comments = post.comments.filter((cmt) => cmt.toString() !== commentId);
+  post.comments = post.comments.filter((cmt) => cmt._id.toString() !== commentId);
   await post.save();
   await Comment.findByIdAndDelete(commentId);
 

@@ -2,15 +2,15 @@ const People = require('../models/people.model'); // Make sure to adjust the pat
 
 module.exports = async (req) => {
   try {
-    const { reqEmail } = req.claims; 
+    const { email } = req.claims; 
 
-    const user = await People.findOne({ reqEmail }).exec(); 
+    const user = await People.findOne({ email }).exec(); 
 
     if (!user) {
       throw new Error("User not found");
     }
 
-    const { _id, email, firstName, lastName, avatar } = user;
+    const { _id, firstName, lastName, avatar } = user;
 
     return {
       _id, 

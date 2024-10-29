@@ -29,8 +29,8 @@ const checkAuth = (req, res, next) => {
       return res.status(403).json({ error: "Invalid Token Type" }); // Forbidden
     }
 
-    req.claims = decoded; // Store decoded token payload in request object
-    next(); // Proceed to next middleware or route handler
+    req.claims = decoded; 
+    next(); 
   });
 };
 
